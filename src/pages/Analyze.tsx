@@ -6,6 +6,8 @@ import { PageWrapper } from "@/components/layout/PageWrapper";
 import { ImageUploader } from "@/components/analyze/ImageUploader";
 import { AnalysisLoader } from "@/components/analyze/AnalysisLoader";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 type AnalysisState = "idle" | "ready" | "analyzing";
 
@@ -27,12 +29,40 @@ const Analyze = () => {
     setAnalysisState("idle");
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
+    if (!selectedImage) return;
+
     setAnalysisState("analyzing");
-    // Simulate analysis time
-    setTimeout(() => {
-      navigate("/results", { state: { imageUrl: selectedImage } });
-    }, 4000);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-food', {
+        body: { imageBase64: selectedImage }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Navigate to results with the analysis data
+      navigate("/results", { 
+        state: { 
+          imageUrl: selectedImage,
+          analysisResult: data
+        } 
+      });
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to analyze the image. Please try again.",
+        variant: "destructive",
+      });
+      setAnalysisState("ready");
+    }
   };
 
   return (
@@ -49,7 +79,7 @@ const Analyze = () => {
           </Link>
           <h1 className="text-3xl font-bold">Analyze Your Meal</h1>
           <p className="mt-2 text-muted-foreground">
-            Upload a photo of your plate to get instant nutrition insights
+            Upload a photo of your plate to get instant AI-powered nutrition insights
           </p>
         </div>
 
@@ -89,7 +119,7 @@ const Analyze = () => {
                   >
                     <Button onClick={handleAnalyze} size="xl" className="w-full">
                       <Sparkles className="mr-2 h-5 w-5" />
-                      Start Analysis
+                      Start AI Analysis
                     </Button>
                   </motion.div>
                 )}
