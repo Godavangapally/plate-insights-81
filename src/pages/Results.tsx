@@ -1,17 +1,40 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Share2, Bookmark, RotateCcw } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Navigate } from "react-router-dom";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import { NutritionCard } from "@/components/results/NutritionCard";
 import { FoodItemsList } from "@/components/results/FoodItemsList";
 import { HealthSuggestions } from "@/components/results/HealthSuggestions";
 import { Button } from "@/components/ui/button";
-import { mockAnalysisResult } from "@/lib/mockData";
 import { toast } from "@/hooks/use-toast";
+
+interface AnalysisResult {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  items: {
+    name: string;
+    quantity: string;
+    calories: number;
+    tags: string[];
+  }[];
+  suggestions: {
+    type: "positive" | "warning" | "tip";
+    text: string;
+  }[];
+  overallScore: "balanced" | "needs-improvement" | "great";
+}
 
 const Results = () => {
   const location = useLocation();
-  const imageUrl = location.state?.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop";
+  const imageUrl = location.state?.imageUrl;
+  const analysisResult: AnalysisResult | undefined = location.state?.analysisResult;
+
+  // Redirect to analyze page if no data
+  if (!analysisResult) {
+    return <Navigate to="/analyze" replace />;
+  }
 
   const handleSave = () => {
     toast({
@@ -68,18 +91,18 @@ const Results = () => {
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6">
             <NutritionCard
-              calories={mockAnalysisResult.calories}
-              protein={mockAnalysisResult.protein}
-              carbs={mockAnalysisResult.carbs}
-              fats={mockAnalysisResult.fats}
+              calories={analysisResult.calories}
+              protein={analysisResult.protein}
+              carbs={analysisResult.carbs}
+              fats={analysisResult.fats}
             />
             <HealthSuggestions
-              suggestions={mockAnalysisResult.suggestions}
-              overallScore={mockAnalysisResult.overallScore}
+              suggestions={analysisResult.suggestions}
+              overallScore={analysisResult.overallScore}
             />
           </div>
           <div>
-            <FoodItemsList items={mockAnalysisResult.items} />
+            <FoodItemsList items={analysisResult.items} />
           </div>
         </div>
 
