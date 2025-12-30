@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.recalculate-nutrition]
 verify_jwt = false
+
+[functions.calculate-nutrition]
+verify_jwt = false

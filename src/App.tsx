@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navigation } from "@/components/layout/Navigation";
 import Index from "./pages/Index";
 import Analyze from "./pages/Analyze";
+import ClarifyIngredients from "./pages/ClarifyIngredients";
 import Results from "./pages/Results";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
@@ -24,6 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/analyze" element={<Analyze />} />
+            <Route path="/clarify" element={<ClarifyIngredients />} />
             <Route path="/results" element={<Results />} />
             <Route path="/history" element={<History />} />
             <Route path="/profile" element={<Profile />} />
