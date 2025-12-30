@@ -21,6 +21,8 @@ interface AnalysisResult {
     text: string;
   }[];
   overallScore: "balanced" | "needs-improvement" | "great";
+  healthClassification?: "Healthy" | "Moderate" | "Unhealthy";
+  healthReason?: string;
 }
 
 const Results = () => {
@@ -222,6 +224,8 @@ const Results = () => {
             <HealthSuggestions
               suggestions={analysisResult.suggestions}
               overallScore={analysisResult.overallScore}
+              healthClassification={analysisResult.healthClassification}
+              healthReason={analysisResult.healthReason}
             />
           </div>
           <div>

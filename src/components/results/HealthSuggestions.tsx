@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Lightbulb, ThumbsUp, AlertTriangle, TrendingUp } from "lucide-react";
+import { Lightbulb, ThumbsUp, AlertTriangle, TrendingUp, Heart, ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface Suggestion {
   type: "positive" | "warning" | "tip";
@@ -9,6 +9,8 @@ interface Suggestion {
 interface HealthSuggestionsProps {
   suggestions: Suggestion[];
   overallScore: "balanced" | "needs-improvement" | "great";
+  healthClassification?: "Healthy" | "Moderate" | "Unhealthy";
+  healthReason?: string;
 }
 
 const iconMap = {
@@ -29,8 +31,41 @@ const scoreConfig = {
   "great": { label: "Excellent Choice!", color: "text-primary", bg: "bg-primary/10" },
 };
 
-export function HealthSuggestions({ suggestions, overallScore }: HealthSuggestionsProps) {
+const healthClassConfig = {
+  "Healthy": { 
+    label: "Healthy", 
+    color: "text-success", 
+    bg: "bg-success/10", 
+    border: "border-success/30",
+    Icon: ShieldCheck,
+    description: "Great choices! This meal supports your health goals."
+  },
+  "Moderate": { 
+    label: "Moderate", 
+    color: "text-warning", 
+    bg: "bg-warning/10", 
+    border: "border-warning/30",
+    Icon: Heart,
+    description: "A balanced meal with some room for healthier swaps."
+  },
+  "Unhealthy": { 
+    label: "Unhealthy", 
+    color: "text-destructive", 
+    bg: "bg-destructive/10", 
+    border: "border-destructive/30",
+    Icon: ShieldAlert,
+    description: "Consider healthier alternatives for regular consumption."
+  },
+};
+
+export function HealthSuggestions({ 
+  suggestions, 
+  overallScore, 
+  healthClassification,
+  healthReason 
+}: HealthSuggestionsProps) {
   const scoreInfo = scoreConfig[overallScore];
+  const healthInfo = healthClassification ? healthClassConfig[healthClassification] : null;
 
   return (
     <motion.div
@@ -39,6 +74,30 @@ export function HealthSuggestions({ suggestions, overallScore }: HealthSuggestio
       transition={{ delay: 0.3 }}
       className="rounded-2xl border border-border bg-card p-6 shadow-card"
     >
+      {/* Health Classification Badge */}
+      {healthInfo && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className={`mb-6 flex items-center gap-4 rounded-xl border p-4 ${healthInfo.bg} ${healthInfo.border}`}
+        >
+          <div className={`flex h-14 w-14 items-center justify-center rounded-full ${healthInfo.bg}`}>
+            <healthInfo.Icon className={`h-7 w-7 ${healthInfo.color}`} />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className={`text-xl font-bold ${healthInfo.color}`}>
+                {healthInfo.label}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {healthReason || healthInfo.description}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Overall Score */}
       <div className="mb-6 flex items-center gap-3">
         <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${scoreInfo.bg}`}>

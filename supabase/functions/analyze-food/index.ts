@@ -31,41 +31,51 @@ serve(async (req) => {
       );
     }
 
-    console.log('Analyzing food image...');
+    console.log('Step 1: Detecting food items from image...');
 
-    const systemPrompt = `You are a professional nutritionist AI that analyzes food images. 
-When given a food image, you must:
-1. Identify all food items visible in the image
-2. Estimate portion sizes
-3. Calculate nutritional information (calories, protein, carbs, fats)
-4. Provide health suggestions
+    // Step 1: Only detect food items and determine what clarification questions are needed
+    const systemPrompt = `You are a professional nutritionist AI that analyzes food images.
+
+Your task is to ONLY identify the food items visible in the image and determine what clarification questions need to be asked before calculating nutrition.
+
+For each food item, identify:
+1. The name of the food
+2. Estimated portion size
+3. What ingredient variations are possible (flour type, oil type, cooking method, sweetener)
 
 You MUST respond with valid JSON in this exact format:
 {
-  "calories": <total calories as number>,
-  "protein": <grams as number>,
-  "carbs": <grams as number>,
-  "fats": <grams as number>,
   "items": [
     {
       "name": "<food item name>",
-      "quantity": "<portion size like '150g' or '1 cup'>",
-      "calories": <calories for this item as number>,
-      "tags": ["<tag1>", "<tag2>"]
+      "quantity": "<portion size like '150g' or '1 cup' or '2 pieces'>",
+      "needsClarification": true/false,
+      "clarificationQuestions": [
+        {
+          "questionId": "<oil|flour|cooking|sugar>",
+          "question": "<human readable question>",
+          "options": [
+            {"id": "<option_id>", "label": "<display label>", "isDefault": true/false}
+          ]
+        }
+      ]
     }
   ],
-  "suggestions": [
-    {
-      "type": "<positive|warning|tip>",
-      "text": "<suggestion text>"
-    }
-  ],
-  "overallScore": "<balanced|needs-improvement|great>"
+  "mealDescription": "<brief description of the overall meal>"
 }
 
-Tags can be: "High Protein", "High Carbs", "High Fat", "Low Calorie", "Fiber Rich", "Vitamin Rich"
+Guidelines for clarification questions:
+- "oil": Ask about oil type for fried/cooked items (olive oil, vegetable oil, ghee, coconut oil, no oil)
+- "flour": Ask about flour type for breads/rotis/puris (whole wheat, refined maida, millet, multigrain)
+- "cooking": Ask about cooking method for items that could be prepared differently (deep fried, pan fried, air fried, baked, steamed, grilled, boiled)
+- "sugar": Ask about sweetener for sweet items (white sugar, brown sugar, honey, jaggery, stevia, no sugar)
 
-Be accurate with your estimates. If you cannot identify the food clearly, make reasonable assumptions based on what's visible.`;
+Only include relevant questions for each food item. For example:
+- Puri: Ask about flour type, oil type, and cooking method
+- Plain rice: No questions needed (needsClarification: false)
+- Gulab jamun: Ask about flour type, sugar type, and cooking method
+
+Set isDefault: true for the most common preparation method.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -80,7 +90,7 @@ Be accurate with your estimates. If you cannot identify the food clearly, make r
           { 
             role: 'user', 
             content: [
-              { type: 'text', text: 'Analyze this food image and provide nutritional information.' },
+              { type: 'text', text: 'Identify the food items in this image and determine what clarification questions are needed about ingredients and preparation methods.' },
               { 
                 type: 'image_url', 
                 image_url: { 
@@ -119,30 +129,36 @@ Be accurate with your estimates. If you cannot identify the food clearly, make r
     const data = await response.json();
     const aiResponse = data.choices?.[0]?.message?.content;
 
-    console.log('AI response received:', aiResponse?.substring(0, 200));
+    console.log('AI response received:', aiResponse?.substring(0, 300));
 
     // Parse the JSON from AI response
-    let analysisResult;
+    let detectionResult;
     try {
-      // Extract JSON from the response (handle markdown code blocks)
       let jsonStr = aiResponse;
       const jsonMatch = aiResponse.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
         jsonStr = jsonMatch[1];
       }
-      analysisResult = JSON.parse(jsonStr.trim());
+      detectionResult = JSON.parse(jsonStr.trim());
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       return new Response(
-        JSON.stringify({ error: 'Failed to parse analysis results' }),
+        JSON.stringify({ error: 'Failed to parse detection results' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Analysis complete:', analysisResult.calories, 'calories');
+    // Check if any item needs clarification
+    const needsClarification = detectionResult.items.some((item: any) => item.needsClarification);
+
+    console.log('Detection complete. Items:', detectionResult.items.length, 'Needs clarification:', needsClarification);
 
     return new Response(
-      JSON.stringify(analysisResult),
+      JSON.stringify({
+        step: 'detection',
+        needsClarification,
+        ...detectionResult,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

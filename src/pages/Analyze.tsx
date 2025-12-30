@@ -35,6 +35,7 @@ const Analyze = () => {
     setAnalysisState("analyzing");
 
     try {
+      // Step 1: Detect food items
       const { data, error } = await supabase.functions.invoke('analyze-food', {
         body: { imageBase64: selectedImage }
       });
@@ -47,13 +48,39 @@ const Analyze = () => {
         throw new Error(data.error);
       }
 
-      // Navigate to results with the analysis data
-      navigate("/results", { 
-        state: { 
-          imageUrl: selectedImage,
-          analysisResult: data
-        } 
-      });
+      // Check if clarification is needed
+      if (data.needsClarification) {
+        // Navigate to clarification page
+        navigate("/clarify", { 
+          state: { 
+            imageUrl: selectedImage,
+            detectionResult: data
+          } 
+        });
+      } else {
+        // No clarification needed - calculate directly
+        const { data: nutritionData, error: nutritionError } = await supabase.functions.invoke('calculate-nutrition', {
+          body: { 
+            items: data.items,
+            userAnswers: {}
+          }
+        });
+
+        if (nutritionError) {
+          throw new Error(nutritionError.message);
+        }
+
+        if (nutritionData.error) {
+          throw new Error(nutritionData.error);
+        }
+
+        navigate("/results", { 
+          state: { 
+            imageUrl: selectedImage,
+            analysisResult: nutritionData
+          } 
+        });
+      }
     } catch (error) {
       console.error('Analysis failed:', error);
       toast({
