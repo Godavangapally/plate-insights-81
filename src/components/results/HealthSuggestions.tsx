@@ -64,8 +64,15 @@ export function HealthSuggestions({
   healthClassification,
   healthReason 
 }: HealthSuggestionsProps) {
-  const scoreInfo = scoreConfig[overallScore];
-  const healthInfo = healthClassification ? healthClassConfig[healthClassification] : null;
+  const scoreInfo = scoreConfig[overallScore] || scoreConfig["balanced"];
+  
+  // Normalize healthClassification to handle different casings from API
+  const normalizedClassification = healthClassification 
+    ? (healthClassification.charAt(0).toUpperCase() + healthClassification.slice(1).toLowerCase()) as keyof typeof healthClassConfig
+    : null;
+  const healthInfo = normalizedClassification && healthClassConfig[normalizedClassification] 
+    ? healthClassConfig[normalizedClassification] 
+    : null;
 
   return (
     <motion.div
