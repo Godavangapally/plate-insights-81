@@ -1,16 +1,29 @@
-import { NavLink as RouterNavLink } from "react-router-dom";
-import { Home, Camera, History, User, Utensils } from "lucide-react";
+import { NavLink as RouterNavLink, useNavigate } from "react-router-dom";
+import { Home, Camera, History, User, Utensils, LogIn, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/analyze", icon: Camera, label: "Analyze" },
   { to: "/history", icon: History, label: "History" },
-  { to: "/profile", icon: User, label: "Profile" },
 ];
 
 export function Navigation() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuthAction = async () => {
+    if (user) {
+      await signOut();
+      navigate("/");
+    } else {
+      navigate("/auth");
+    }
+  };
+
   return (
     <motion.nav
       initial={{ y: 20, opacity: 0 }}
@@ -58,6 +71,28 @@ export function Navigation() {
                   )}
                 </RouterNavLink>
               ))}
+
+              {/* Auth Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleAuthAction}
+                className="relative flex flex-col items-center gap-1 rounded-xl px-4 py-2 text-xs font-medium transition-all duration-300 md:flex-row md:gap-2 md:text-sm text-muted-foreground hover:text-foreground h-auto"
+              >
+                {user ? (
+                  <>
+                    <LogOut className="h-5 w-5" />
+                    <span className="hidden md:inline">Sign Out</span>
+                    <span className="md:hidden">Out</span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-5 w-5" />
+                    <span className="hidden md:inline">Sign In</span>
+                    <span className="md:hidden">In</span>
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         </div>

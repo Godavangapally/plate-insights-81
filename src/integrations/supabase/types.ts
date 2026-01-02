@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      meals: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string
+          fats: number
+          food_items: Json
+          health_classification: Database["public"]["Enums"]["health_classification"]
+          health_score: number | null
+          health_suggestions: Json | null
+          id: string
+          image_url: string | null
+          protein: number
+          selected_ingredients: Json | null
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fats?: number
+          food_items?: Json
+          health_classification?: Database["public"]["Enums"]["health_classification"]
+          health_score?: number | null
+          health_suggestions?: Json | null
+          id?: string
+          image_url?: string | null
+          protein?: number
+          selected_ingredients?: Json | null
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fats?: number
+          food_items?: Json
+          health_classification?: Database["public"]["Enums"]["health_classification"]
+          health_score?: number | null
+          health_suggestions?: Json | null
+          id?: string
+          image_url?: string | null
+          protein?: number
+          selected_ingredients?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +70,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      health_classification: "Healthy" | "Moderate" | "Unhealthy"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +197,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      health_classification: ["Healthy", "Moderate", "Unhealthy"],
+    },
   },
 } as const
