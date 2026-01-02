@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Share2, Bookmark, RotateCcw, RefreshCw } from "lucide-react";
-import { Link, useLocation, Navigate } from "react-router-dom";
+import { ArrowLeft, Share2, Bookmark, RotateCcw, RefreshCw, Loader2 } from "lucide-react";
+import { Link, useLocation, Navigate, useNavigate } from "react-router-dom";
 import { PageWrapper } from "@/components/layout/PageWrapper";
 import { NutritionCard } from "@/components/results/NutritionCard";
 import { FoodItemsList, type FoodItem } from "@/components/results/FoodItemsList";
@@ -9,6 +9,8 @@ import { HealthSuggestions } from "@/components/results/HealthSuggestions";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useSaveMeal } from "@/hooks/useSaveMeal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AnalysisResult {
   calories: number;
@@ -27,8 +29,11 @@ interface AnalysisResult {
 
 const Results = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const imageUrl = location.state?.imageUrl;
   const initialResult: AnalysisResult | undefined = location.state?.analysisResult;
+  const { user } = useAuth();
+  const { saveMeal, isSaving } = useSaveMeal();
 
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     initialResult || null
@@ -41,6 +46,7 @@ const Results = () => {
   } | null>(null);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Store original totals on mount
   useEffect(() => {
@@ -132,11 +138,32 @@ const Results = () => {
     }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Meal Saved!",
-      description: "This meal has been added to your history.",
+  const handleSave = async () => {
+    if (!analysisResult) return;
+
+    if (!user) {
+      toast({
+        title: "Sign In Required",
+        description: "Please sign in to save your meals.",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    const success = await saveMeal({
+      imageUrl,
+      items: analysisResult.items,
+      calories: analysisResult.calories,
+      protein: analysisResult.protein,
+      carbs: analysisResult.carbs,
+      fats: analysisResult.fats,
+      healthClassification: analysisResult.healthClassification,
+      suggestions: analysisResult.suggestions,
     });
+
+    if (success) {
+      setIsSaved(true);
+    }
   };
 
   const handleShare = () => {
@@ -167,9 +194,18 @@ const Results = () => {
               <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
-            <Button variant="default" size="sm" onClick={handleSave}>
-              <Bookmark className="mr-2 h-4 w-4" />
-              Save Meal
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving || isSaved}
+            >
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Bookmark className="mr-2 h-4 w-4" />
+              )}
+              {isSaved ? "Saved!" : "Save Meal"}
             </Button>
           </div>
         </div>
